@@ -94,6 +94,12 @@ function Section({ title, children }) {
 }
 
 function Dashboard({ data, goal, onReset }) {
+  const skills = data.current_skills || [];
+  const missing = data.missing_skills || [];
+  const roadmap = data.roadmap || [];
+  const projects = data.projects || [];
+  const questions = data.interview_questions || [];
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -112,13 +118,13 @@ function Dashboard({ data, goal, onReset }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
         <StatCard title="Career Score" value={data.career_score} suffix="%" bar={data.career_score} />
         <StatCard title="Interview Readiness" value={data.interview_readiness} suffix="%" bar={data.interview_readiness} />
-        <StatCard title="Missing Skills" value={data.missing_skills.length} />
-        <StatCard title="Recommended Projects" value={data.projects.length} />
+        <StatCard title="Missing Skills" value={missing.length} />
+        <StatCard title="Recommended Projects" value={projects.length} />
       </div>
 
       <Section title="Skills you already have">
         <div className="flex flex-wrap gap-2">
-          {data.current_skills.map((s) => (
+          {skills.map((s) => (
             <span key={s} className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium">
               {s}
             </span>
@@ -128,7 +134,7 @@ function Dashboard({ data, goal, onReset }) {
 
       <Section title="Skill gaps">
         <div className="flex flex-wrap gap-2">
-          {data.missing_skills.map((s) => (
+          {missing.map((s) => (
             <span
               key={s.name}
               className={`px-3 py-1 rounded-full border text-sm font-medium ${priorityStyle(s.priority)}`}
@@ -141,12 +147,12 @@ function Dashboard({ data, goal, onReset }) {
 
       <Section title="Your roadmap">
         <div className="border-l-4 border-indigo-300 pl-6 space-y-6">
-          {data.roadmap.map((m) => (
+          {roadmap.map((m) => (
             <div key={m.month} className="relative">
               <span className="absolute -left-[34px] top-1 w-4 h-4 rounded-full bg-indigo-600" />
               <p className="text-sm font-semibold text-indigo-600">Month {m.month}</p>
               <p className="text-lg font-bold text-gray-900">{m.focus}</p>
-              <p className="text-gray-600 text-sm mt-1">{m.topics.join(" · ")}</p>
+              <p className="text-gray-600 text-sm mt-1">{(m.topics || []).join(" · ")}</p>
             </div>
           ))}
         </div>
@@ -154,7 +160,7 @@ function Dashboard({ data, goal, onReset }) {
 
       <Section title="Project recommendations">
         <div className="grid md:grid-cols-3 gap-4">
-          {data.projects.map((p) => (
+          {projects.map((p) => (
             <div key={p.title} className="bg-white rounded-2xl shadow p-5">
               <span className={`text-xs font-semibold px-2 py-1 rounded-full ${levelStyle(p.level)}`}>
                 {p.level}
@@ -168,7 +174,7 @@ function Dashboard({ data, goal, onReset }) {
 
       <Section title="Interview preparation">
         <div className="space-y-3">
-          {data.interview_questions.map((q, i) => (
+          {questions.map((q, i) => (
             <details key={i} className="bg-white rounded-xl shadow p-4 cursor-pointer">
               <summary className="font-semibold text-gray-900">
                 Q{i + 1}. {q.question}

@@ -11,8 +11,10 @@ from google.genai import types
 
 load_dotenv()
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-MODEL = "gemini-2.5-flash"
+api_key = os.getenv("GEMINI_API_KEY", "").strip()
+client = genai.Client(api_key=api_key)
+
+MODELS = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.8-flash"]
 
 app = FastAPI()
 
@@ -71,22 +73,32 @@ Analyze the student and return ONLY valid JSON in exactly this structure:
 
 def run_gemini(prompt):
     last_error = None
-    for _ in range(2):  # try twice if the JSON is broken
-        try:
-            response = client.models.generate_content(
-                model=MODEL,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.7,
-                ),
-            )
-            return json.loads(response.text)
-        except json.JSONDecodeError as e:
-            last_error = e
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
-    raise HTTPException(status_code=502, detail="AI returned invalid JSON, please try again")
+    for model in MODELS:
+        for _ in range(2):  # try twice if the JSON is broken
+            try:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        temperature=0.7,
+                    ),
+                )
+                text = (response.text or "").strip()
+                if text.startswith("```json"):
+                    text = text[7:]
+                if text.startswith("```"):
+                    text = text[3:]
+                if text.endswith("```"):
+                    text = text[:-3]
+                return json.loads(text.strip())
+            except json.JSONDecodeError:
+                continue
+            except Exception as e:
+                last_error = e
+                break  # try next model on API error
+
+    raise HTTPException(status_code=500, detail=str(last_error or "AI failed to generate a response"))
 
 
 @app.get("/")
